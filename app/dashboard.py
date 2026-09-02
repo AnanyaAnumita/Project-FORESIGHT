@@ -382,6 +382,7 @@ def load_sku_master():
     df = safe_read_csv(path)
 
     if not df.empty and "sku_id" in df.columns:
+
         df["sku_id"] = (
             df["sku_id"]
             .astype(str)
@@ -405,6 +406,7 @@ def load_inventory():
     if not df.empty:
 
         if "sku_id" in df.columns:
+
             df["sku_id"] = (
                 df["sku_id"]
                 .astype(str)
@@ -441,6 +443,7 @@ def load_risk():
     if not df.empty:
 
         if "sku_id" in df.columns:
+
             df["sku_id"] = (
                 df["sku_id"]
                 .astype(str)
@@ -515,7 +518,7 @@ def load_dashboard_summaries():
 
         prepare_dashboard_data.py
 
-    This avoids scanning the 8.5M-row daily_demand.csv
+    This avoids scanning the huge daily_demand.csv
     every time the dashboard starts.
     """
 
@@ -729,286 +732,115 @@ def load_dashboard_summaries():
 
 
 # ============================================================
-# FORECAST DATA
+# PRECOMPUTED FORECAST DATA
 # ============================================================
 
 @st.cache_data(show_spinner=False)
-def get_series_for_forecast(
-    selected_sku=None,
-    selected_store=None,
-):
+def load_precomputed_forecast():
+
+    """
+    Loads the small precomputed Prophet forecast output.
+
+    This file is intentionally used instead of the large
+    daily_demand.csv so that the dashboard can run on
+    Streamlit Community Cloud.
+    """
 
     path = (
-        DATA_DIR
-        / "daily_demand.csv"
+        OUTPUT_DIR
+        / "prophet_forecast_predictions.csv"
     )
 
-    if not path.exists():
+    df = safe_read_csv(path)
+
+    if df.empty:
         return pd.DataFrame()
 
-    selected_sku = (
-        str(selected_sku)
-        if selected_sku is not None
-        else None
-    )
+    # --------------------------------------------------------
+    # DATE
+    # --------------------------------------------------------
 
-    selected_store = (
-        str(selected_store)
-        if selected_store is not None
-        else None
-    )
+    if "date" in df.columns:
 
-    frames = []
-
-    for chunk in pd.read_csv(
-        path,
-        chunksize=250_000,
-    ):
-
-        if "sku_id" in chunk.columns:
-
-            chunk["sku_id"] = (
-                chunk["sku_id"]
-                .astype(str)
-            )
-
-        if "store_id" in chunk.columns:
-
-            chunk["store_id"] = (
-                chunk["store_id"]
-                .astype(str)
-            )
-
-        if selected_sku is not None:
-
-            chunk = chunk[
-                chunk["sku_id"]
-                == selected_sku
-            ]
-
-        if (
-            selected_store is not None
-            and "store_id"
-            in chunk.columns
-        ):
-
-            chunk = chunk[
-                chunk["store_id"]
-                == selected_store
-            ]
-
-        if chunk.empty:
-            continue
-
-        chunk["date"] = pd.to_datetime(
-            chunk["date"],
+        df["date"] = pd.to_datetime(
+            df["date"],
             errors="coerce",
         )
 
-        chunk["demand"] = pd.to_numeric(
-            chunk["demand"],
-            errors="coerce",
-        ).fillna(0)
+    # --------------------------------------------------------
+    # NUMERIC COLUMNS
+    # --------------------------------------------------------
 
-        chunk = chunk.dropna(
-            subset=["date"]
-        )
+    for col in [
+        "actual",
+        "forecast",
+        "lower_bound",
+        "upper_bound",
+    ]:
 
-        frames.append(
-            chunk[
-                [
-                    "date",
-                    "demand",
-                ]
-            ]
-        )
+        if col in df.columns:
 
-    if not frames:
-        return pd.DataFrame()
-
-    result = (
-        pd.concat(
-            frames,
-            ignore_index=True,
-        )
-        .groupby(
-            "date",
-            as_index=False,
-        )["demand"]
-        .sum()
-        .sort_values("date")
-    )
-
-    return result
-
-
-def seasonal_naive_forecast(
-    history,
-    periods,
-):
-
-    if history.empty:
-        return pd.DataFrame()
-
-    history = (
-        history
-        .sort_values("date")
-        .copy()
-    )
-
-    last_date = (
-        history["date"].max()
-    )
-
-    future_dates = pd.date_range(
-        last_date
-        + pd.Timedelta(days=1),
-        periods=periods,
-        freq="D",
-    )
-
-    values = (
-        history["demand"]
-        .tail(7)
-        .to_numpy()
-    )
-
-    if len(values) == 0:
-        return pd.DataFrame()
-
-    forecast_values = np.resize(
-        values,
-        periods,
-    )
-
-    return pd.DataFrame(
-        {
-            "date": future_dates,
-            "forecast": forecast_values,
-        }
-    )
-
-
-@st.cache_data(show_spinner=False)
-def try_prophet_forecast(
-    history,
-    periods=28,
-):
-
-    try:
-
-        from prophet import Prophet
-
-    except Exception:
-
-        return (
-            seasonal_naive_forecast(
-                history,
-                periods,
-            ),
-            "Seasonal-naive fallback",
-        )
-
-    if (
-        history.empty
-        or len(history) < 30
-    ):
-
-        return (
-            seasonal_naive_forecast(
-                history,
-                periods,
-            ),
-            "Seasonal-naive fallback",
-        )
-
-    train = (
-        history
-        .rename(
-            columns={
-                "date": "ds",
-                "demand": "y",
-            }
-        )
-        .copy()
-    )
-
-    train["y"] = pd.to_numeric(
-        train["y"],
-        errors="coerce",
-    ).fillna(0)
-
-    try:
-
-        model = Prophet(
-            yearly_seasonality=True,
-            weekly_seasonality=True,
-            daily_seasonality=False,
-            seasonality_mode="additive",
-        )
-
-        model.fit(train)
-
-        future = (
-            model
-            .make_future_dataframe(
-                periods=periods,
-                freq="D",
-            )
-        )
-
-        forecast = model.predict(
-            future
-        )
-
-        result = (
-            forecast[
-                [
-                    "ds",
-                    "yhat",
-                    "yhat_lower",
-                    "yhat_upper",
-                ]
-            ]
-            .tail(periods)
-            .copy()
-        )
-
-        result = result.rename(
-            columns={
-                "ds": "date",
-                "yhat": "forecast",
-                "yhat_lower": "lower",
-                "yhat_upper": "upper",
-            }
-        )
-
-        for col in [
-            "forecast",
-            "lower",
-            "upper",
-        ]:
-
-            result[col] = (
-                pd.to_numeric(
-                    result[col],
-                    errors="coerce",
-                )
-                .fillna(0)
-                .clip(lower=0)
+            df[col] = pd.to_numeric(
+                df[col],
+                errors="coerce",
             )
 
-        return result, "Prophet"
+    # --------------------------------------------------------
+    # CLEAN
+    # --------------------------------------------------------
 
-    except Exception:
+    required_columns = [
+        "date",
+        "forecast",
+    ]
 
-        return (
-            seasonal_naive_forecast(
-                history,
-                periods,
-            ),
-            "Seasonal-naive fallback",
+    missing_columns = [
+        col
+        for col in required_columns
+        if col not in df.columns
+    ]
+
+    if missing_columns:
+        return pd.DataFrame()
+
+    df = (
+        df
+        .dropna(subset=["date"])
+        .sort_values("date")
+        .reset_index(drop=True)
+    )
+
+    df["forecast"] = (
+        df["forecast"]
+        .fillna(0)
+        .clip(lower=0)
+    )
+
+    if "actual" in df.columns:
+
+        df["actual"] = (
+            df["actual"]
+            .fillna(0)
+            .clip(lower=0)
         )
+
+    if "lower_bound" in df.columns:
+
+        df["lower_bound"] = (
+            df["lower_bound"]
+            .fillna(0)
+            .clip(lower=0)
+        )
+
+    if "upper_bound" in df.columns:
+
+        df["upper_bound"] = (
+            df["upper_bound"]
+            .fillna(0)
+            .clip(lower=0)
+        )
+
+    return df
 
 
 # ============================================================
@@ -1016,8 +848,11 @@ def try_prophet_forecast(
 # ============================================================
 
 sku_master = load_sku_master()
+
 inventory = load_inventory()
+
 risk = load_risk()
+
 model_results = load_model_results()
 
 (
@@ -1193,8 +1028,8 @@ if page == "Home Page":
 
         st.success(
             "**🔮 Forecasting**\n\n"
-            "Estimate future demand and understand "
-            "expected inventory requirements."
+            "Review the precomputed Prophet forecast "
+            "and understand expected demand."
         )
 
     with c:
@@ -1553,198 +1388,98 @@ elif page == "Forecast":
     )
 
     st.caption(
-        "Forecast future demand for a selected SKU and store."
+        "Precomputed Prophet forecast validation results."
     )
 
-    if sku_master.empty:
+    forecast_df = load_precomputed_forecast()
+
+    # --------------------------------------------------------
+    # CHECK FORECAST FILE
+    # --------------------------------------------------------
+
+    if forecast_df.empty:
 
         st.error(
-            "SKU master data is unavailable."
+            "Precomputed forecast data could not be loaded."
+        )
+
+        st.info(
+            "Required file: "
+            "`outputs/prophet_forecast_predictions.csv`"
         )
 
         st.stop()
 
-    # --------------------------------------------------------
-    # PRODUCT SELECTOR
-    # --------------------------------------------------------
-
-    sku_records = (
-        sku_master[
-            [
-                col
-                for col in [
-                    "sku_id",
-                    "sku_name",
-                ]
-                if col in sku_master.columns
-            ]
-        ]
-        .drop_duplicates()
+    st.info(
+        "This page uses the precomputed Prophet forecast "
+        "stored in `outputs/prophet_forecast_predictions.csv`. "
+        "The online dashboard does not need the large "
+        "`daily_demand.csv` file."
     )
 
-    sku_lookup = {}
-    display_options = []
-
-    for _, row in sku_records.iterrows():
-
-        sku_id = str(
-            row.get(
-                "sku_id",
-                "",
-            )
-        )
-
-        product_name = str(
-            row.get(
-                "sku_name",
-                "",
-            )
-        )
-
-        if (
-            not product_name
-            or product_name.lower()
-            == "nan"
-        ):
-
-            label = sku_id
-
-        else:
-
-            label = (
-                f"{sku_id} — "
-                f"{product_name}"
-            )
-
-        display_options.append(
-            label
-        )
-
-        sku_lookup[label] = sku_id
-
-    selected_display = st.selectbox(
-        "Select SKU",
-        display_options,
-    )
-
-    selected_sku = sku_lookup[
-        selected_display
-    ]
-
-    # --------------------------------------------------------
-    # STORE
-    # --------------------------------------------------------
-
-    store_options = [
-        "All Stores"
-    ]
-
-    if not store_summary.empty:
-
-        store_options.extend(
-            store_summary[
-                "store_id"
-            ]
-            .astype(str)
-            .tolist()
-        )
-
-    selected_store_option = (
-        st.selectbox(
-            "Select Store",
-            store_options,
-        )
-    )
-
-    selected_store = (
-        None
-        if selected_store_option
-        == "All Stores"
-        else selected_store_option
-    )
+    st.divider()
 
     # --------------------------------------------------------
     # FORECAST HORIZON
     # --------------------------------------------------------
 
-    forecast_days = st.slider(
-        "Forecast horizon",
-        min_value=7,
-        max_value=56,
-        value=28,
-        step=7,
+    available_rows = len(
+        forecast_df
     )
 
-    sku_info = sku_master[
-        sku_master["sku_id"]
-        .astype(str)
-        == str(selected_sku)
-    ]
+    if available_rows < 7:
 
-    if not sku_info.empty:
+        forecast_days = available_rows
 
-        product_name = str(
-            sku_info.iloc[0].get(
-                "sku_name",
-                selected_sku,
-            )
+    else:
+
+        forecast_days = st.slider(
+            "Forecast / validation period",
+            min_value=7,
+            max_value=min(
+                56,
+                available_rows
+            ),
+            value=min(
+                28,
+                available_rows
+            ),
+            step=1,
         )
 
-        category = str(
-            sku_info.iloc[0].get(
-                "category",
-                "—",
-            )
-        )
+    display_df = (
+        forecast_df
+        .tail(forecast_days)
+        .copy()
+    )
 
-        st.info(
-            f"**{selected_sku} — "
-            f"{product_name}**\n\n"
-            f"Category: {category}"
-        )
+    # --------------------------------------------------------
+    # HISTORICAL DATA
+    # --------------------------------------------------------
 
-    with st.spinner(
-        "Preparing forecast..."
-    ):
+    if "actual" in forecast_df.columns:
 
-        history = (
-            get_series_for_forecast(
-                selected_sku=selected_sku,
-                selected_store=selected_store,
-            )
-        )
-
-    if history.empty:
-
-        st.warning(
-            "No historical demand was found for this "
-            "SKU/store combination."
+        historical_display = (
+            forecast_df[
+                forecast_df["actual"] > 0
+            ]
+            .tail(180)
+            .copy()
         )
 
     else:
 
-        forecast_df, model_used = (
-            try_prophet_forecast(
-                history,
-                forecast_days,
-            )
-        )
-
-        st.success(
-            f"Forecast method: **{model_used}**"
-        )
-
-        st.divider()
-
-        # ----------------------------------------------------
-        # FORECAST CHART
-        # ----------------------------------------------------
-
         historical_display = (
-            history.tail(180)
+            pd.DataFrame()
         )
 
-        fig = go.Figure()
+    # --------------------------------------------------------
+    # CHART
+    # --------------------------------------------------------
+
+    fig = go.Figure()
+
+    if not historical_display.empty:
 
         fig.add_trace(
             go.Scatter(
@@ -1752,10 +1487,10 @@ elif page == "Forecast":
                     "date"
                 ],
                 y=historical_display[
-                    "demand"
+                    "actual"
                 ],
                 mode="lines",
-                name="Historical demand",
+                name="Actual Demand",
                 line=dict(
                     color=COLORS["cyan"],
                     width=3,
@@ -1763,184 +1498,284 @@ elif page == "Forecast":
             )
         )
 
+    fig.add_trace(
+        go.Scatter(
+            x=display_df[
+                "date"
+            ],
+            y=display_df[
+                "forecast"
+            ],
+            mode="lines+markers",
+            name="Prophet Forecast",
+            line=dict(
+                color=COLORS["orange"],
+                width=3,
+                dash="dash",
+            ),
+            marker=dict(
+                size=6
+            ),
+        )
+    )
+
+    # --------------------------------------------------------
+    # PREDICTION INTERVAL
+    # --------------------------------------------------------
+
+    if (
+        "lower_bound"
+        in display_df.columns
+        and "upper_bound"
+        in display_df.columns
+    ):
+
         fig.add_trace(
             go.Scatter(
-                x=forecast_df[
+                x=display_df[
                     "date"
                 ],
-                y=forecast_df[
-                    "forecast"
+                y=display_df[
+                    "upper_bound"
                 ],
-                mode="lines+markers",
-                name="Forecast",
+                mode="lines",
                 line=dict(
-                    color=COLORS["orange"],
-                    width=3,
-                    dash="dash",
+                    width=0
                 ),
-                marker=dict(
-                    size=6
+                showlegend=False,
+                hoverinfo="skip",
+            )
+        )
+
+        fig.add_trace(
+            go.Scatter(
+                x=display_df[
+                    "date"
+                ],
+                y=display_df[
+                    "lower_bound"
+                ],
+                mode="lines",
+                fill="tonexty",
+                fillcolor=(
+                    "rgba(249,115,22,0.15)"
                 ),
+                line=dict(
+                    width=0
+                ),
+                name="Prediction Interval",
             )
         )
 
-        if (
-            "lower"
-            in forecast_df.columns
-            and "upper"
-            in forecast_df.columns
-        ):
+    apply_chart_theme(
+        fig,
+        height=560,
+    )
 
-            fig.add_trace(
-                go.Scatter(
-                    x=forecast_df[
-                        "date"
-                    ],
-                    y=forecast_df[
-                        "upper"
-                    ],
-                    mode="lines",
-                    line=dict(
-                        width=0
-                    ),
-                    showlegend=False,
-                    hoverinfo="skip",
+    fig.update_layout(
+        title=(
+            "Actual Demand vs Prophet Forecast"
+        ),
+        hovermode="x unified",
+    )
+
+    st.plotly_chart(
+        fig,
+        use_container_width=True,
+    )
+
+    # --------------------------------------------------------
+    # FORECAST KPIs
+    # --------------------------------------------------------
+
+    total_forecast = (
+        display_df[
+            "forecast"
+        ].sum()
+    )
+
+    avg_forecast = (
+        display_df[
+            "forecast"
+        ].mean()
+    )
+
+    max_forecast = (
+        display_df[
+            "forecast"
+        ].max()
+    )
+
+    f1, f2, f3 = st.columns(3)
+
+    f1.metric(
+        "Forecast Demand",
+        format_number(
+            total_forecast
+        ),
+    )
+
+    f2.metric(
+        "Average Daily Forecast",
+        format_number(
+            avg_forecast
+        ),
+    )
+
+    f3.metric(
+        "Peak Forecast",
+        format_number(
+            max_forecast
+        ),
+    )
+
+    st.divider()
+
+    # --------------------------------------------------------
+    # MODEL PERFORMANCE
+    # --------------------------------------------------------
+
+    st.subheader(
+        "🤖 Model Performance"
+    )
+
+    if not model_results.empty:
+
+        performance = (
+            model_results.copy()
+        )
+
+        if "MAE" in performance.columns:
+
+            performance = (
+                performance
+                .sort_values(
+                    "MAE",
+                    ascending=True,
+                )
+                .reset_index(
+                    drop=True
                 )
             )
-
-            fig.add_trace(
-                go.Scatter(
-                    x=forecast_df[
-                        "date"
-                    ],
-                    y=forecast_df[
-                        "lower"
-                    ],
-                    mode="lines",
-                    fill="tonexty",
-                    fillcolor=(
-                        "rgba(249,115,22,0.15)"
-                    ),
-                    line=dict(
-                        width=0
-                    ),
-                    name="Forecast interval",
-                )
-            )
-
-        apply_chart_theme(
-            fig,
-            height=560,
-        )
-
-        fig.update_layout(
-            title=(
-                "Historical Demand vs Future Forecast"
-            ),
-            hovermode="x unified",
-        )
-
-        st.plotly_chart(
-            fig,
-            use_container_width=True,
-        )
-
-        # ----------------------------------------------------
-        # FORECAST KPIs
-        # ----------------------------------------------------
-
-        total_forecast = (
-            forecast_df[
-                "forecast"
-            ].sum()
-        )
-
-        avg_forecast = (
-            forecast_df[
-                "forecast"
-            ].mean()
-        )
-
-        max_forecast = (
-            forecast_df[
-                "forecast"
-            ].max()
-        )
-
-        f1, f2, f3 = st.columns(3)
-
-        f1.metric(
-            "Forecast Demand",
-            format_number(
-                total_forecast
-            ),
-        )
-
-        f2.metric(
-            "Average Daily Forecast",
-            format_number(
-                avg_forecast
-            ),
-        )
-
-        f3.metric(
-            "Peak Forecast",
-            format_number(
-                max_forecast
-            ),
-        )
-
-        st.divider()
-
-        # ----------------------------------------------------
-        # TABLE
-        # ----------------------------------------------------
-
-        st.subheader(
-            "Forecast table"
-        )
-
-        display_forecast = (
-            forecast_df.copy()
-        )
-
-        display_forecast[
-            "date"
-        ] = (
-            display_forecast[
-                "date"
-            ].dt.strftime(
-                "%Y-%m-%d"
-            )
-        )
-
-        for col in [
-            "forecast",
-            "lower",
-            "upper",
-        ]:
-
-            if col in display_forecast.columns:
-
-                display_forecast[
-                    col
-                ] = (
-                    display_forecast[
-                        col
-                    ].round(2)
-                )
 
         st.dataframe(
-            display_forecast,
+            performance,
             use_container_width=True,
             hide_index=True,
         )
 
-        add_download_button(
-            display_forecast,
-            "forecast_output.csv",
-            "Download forecast",
+        if (
+            "MAE"
+            in performance.columns
+            and not performance.empty
+        ):
+
+            best_model_row = (
+                performance.iloc[0]
+            )
+
+            if "model" in performance.columns:
+
+                best_model = str(
+                    best_model_row[
+                        "model"
+                    ]
+                )
+
+            elif "Model" in performance.columns:
+
+                best_model = str(
+                    best_model_row[
+                        "Model"
+                    ]
+                )
+
+            else:
+
+                best_model = "Best Model"
+
+            best_mae = (
+                best_model_row[
+                    "MAE"
+                ]
+            )
+
+            st.success(
+                f"Best performing model: "
+                f"**{best_model}** "
+                f"with MAE of "
+                f"**{best_mae:,.2f}**"
+            )
+
+    else:
+
+        st.warning(
+            "Model comparison output is not available."
         )
+
+    st.divider()
+
+    # --------------------------------------------------------
+    # FORECAST TABLE
+    # --------------------------------------------------------
+
+    st.subheader(
+        "📋 Forecast Details"
+    )
+
+    table_df = (
+        display_df.copy()
+    )
+
+    rename_map = {
+        "date": "Date",
+        "actual": "Actual Demand",
+        "forecast": "Forecast",
+        "lower_bound": "Lower Bound",
+        "upper_bound": "Upper Bound",
+    }
+
+    table_df = table_df.rename(
+        columns=rename_map
+    )
+
+    if "Date" in table_df.columns:
+
+        table_df["Date"] = pd.to_datetime(
+            table_df["Date"],
+            errors="coerce",
+        ).dt.strftime(
+            "%Y-%m-%d"
+        )
+
+    for col in [
+        "Actual Demand",
+        "Forecast",
+        "Lower Bound",
+        "Upper Bound",
+    ]:
+
+        if col in table_df.columns:
+
+            table_df[col] = (
+                pd.to_numeric(
+                    table_df[col],
+                    errors="coerce",
+                )
+                .round(2)
+            )
+
+    st.dataframe(
+        table_df,
+        use_container_width=True,
+        hide_index=True,
+    )
+
+    add_download_button(
+        table_df,
+        "prophet_forecast_validation.csv",
+        "⬇️ Download Forecast CSV",
+    )
 
 
 # ============================================================
@@ -2008,7 +1843,8 @@ elif page == "Inventory Dashboard":
 
         below_reorder = (
             inv["stock_on_hand"]
-            < inv["reorder_point"]
+            <
+            inv["reorder_point"]
         ).sum()
 
         zero_stock = (
@@ -2129,7 +1965,8 @@ elif page == "Inventory Dashboard":
                 filtered[
                     "stock_on_hand"
                 ]
-                < filtered[
+                <
+                filtered[
                     "safety_stock"
                 ]
             ]
@@ -2143,7 +1980,8 @@ elif page == "Inventory Dashboard":
                 filtered[
                     "stock_on_hand"
                 ]
-                < filtered[
+                <
+                filtered[
                     "reorder_point"
                 ]
             ]
@@ -2154,7 +1992,8 @@ elif page == "Inventory Dashboard":
                 filtered[
                     "stock_on_hand"
                 ]
-                >= filtered[
+                >=
+                filtered[
                     "reorder_point"
                 ]
             ]
@@ -2751,7 +2590,8 @@ elif page == "Product Details":
             product_list = (
                 product_list[
                     sku_match
-                    | name_match
+                    |
+                    name_match
                 ]
             )
 
@@ -2768,6 +2608,7 @@ elif page == "Product Details":
             # ------------------------------------------------
 
             product_options = {}
+
             display_labels = []
 
             for _, row in (
@@ -2945,8 +2786,10 @@ elif page == "Product Details":
 
                     share = (
                         product_total
-                        / overall_total
-                        * 100
+                        /
+                        overall_total
+                        *
+                        100
                         if overall_total > 0
                         else 0
                     )
@@ -3286,8 +3129,10 @@ elif page == "Executive Summary":
 
             critical_pct = (
                 critical_items
-                / len(risk)
-                * 100
+                /
+                len(risk)
+                *
+                100
                 if len(risk) > 0
                 else 0
             )
@@ -3338,12 +3183,27 @@ elif page == "Executive Summary":
 
             if not performance.empty:
 
-                best_model = (
-                    performance.iloc[0].get(
-                        "model",
-                        "Unknown",
+                if "model" in performance.columns:
+
+                    best_model = (
+                        performance.iloc[0].get(
+                            "model",
+                            "Unknown",
+                        )
                     )
-                )
+
+                elif "Model" in performance.columns:
+
+                    best_model = (
+                        performance.iloc[0].get(
+                            "Model",
+                            "Unknown",
+                        )
+                    )
+
+                else:
+
+                    best_model = "Unknown"
 
                 best_mae = (
                     performance.iloc[0].get(
@@ -3363,6 +3223,7 @@ elif page == "Executive Summary":
             for col in [
                 "Rank",
                 "model",
+                "Model",
                 "MAE",
                 "RMSE",
                 "MAPE_percent",
@@ -3380,16 +3241,23 @@ elif page == "Executive Summary":
                 hide_index=True,
             )
 
+        model_column = None
+
+        if "model" in performance.columns:
+            model_column = "model"
+
+        elif "Model" in performance.columns:
+            model_column = "Model"
+
         if (
-            "model"
-            in performance.columns
+            model_column is not None
             and "MAE"
             in performance.columns
         ):
 
             fig = px.bar(
                 performance,
-                x="model",
+                x=model_column,
                 y="MAE",
                 color="MAE",
                 color_continuous_scale=[
