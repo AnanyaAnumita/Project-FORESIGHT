@@ -1,0 +1,91 @@
+EDA COMPLETED
+     │
+     ▼
+┌──────────────────────────────┐
+│ 1. Feature Engineering       │
+│ • Lag features               │
+│ • Rolling averages           │
+│ • Promotion features        │
+│ • Margin features            │
+│ • Time/date features         │
+└──────────────┬───────────────┘
+               ▼
+┌──────────────────────────────┐
+│ 2. Train/Test Split          │
+│ • Time-based split           │
+│ • 80% historical data        │
+│ • 20% future/test data       │
+└──────────────┬───────────────┘
+               ▼
+┌──────────────────────────────┐
+│ 3. Baseline Forecasting      │
+│ • Previous-demand model      │
+│ • MAE / RMSE / MAPE          │
+└──────────────┬───────────────┘
+               ▼
+┌──────────────────────────────┐
+│ 4. ML Demand Forecasting     │
+│ • XGBoost                    │
+│ • Feature-based prediction   │
+│ • SKU/store demand forecast  │
+└──────────────┬───────────────┘
+               ▼
+┌──────────────────────────────┐
+│ 5. Model Evaluation          │
+│ • Compare baseline vs ML     │
+│ • MAE                        │
+│ • RMSE                       │
+│ • MAPE                       │
+│ • Select best model          │
+└──────────────┬───────────────┘
+               ▼
+┌──────────────────────────────┐
+│ 6. Forecast Generation       │
+│ • Generate demand forecasts  │
+│ • SKU-level predictions      │
+│ • Store/SKU analysis         │
+└──────────────┬───────────────┘
+               ▼
+┌──────────────────────────────┐
+│ 7. Inventory Risk Scoring    │
+│ • Stockout risk              │
+│ • Overstock risk             │
+│ • Days of inventory cover    │
+│ • Risk score                 │
+│ • Reorder recommendations    │
+└──────────────┬───────────────┘
+               ▼
+┌──────────────────────────────┐
+│ 8. Business Recommendations  │
+│ • Reorder                    │
+│ • Maintain stock             │
+│ • Reduce excess inventory    │
+│ • Prioritize risky SKUs      │
+└──────────────┬───────────────┘
+               ▼
+┌──────────────────────────────┐
+│ 9. Streamlit Dashboard       │
+│ • KPIs                       │
+│ • Demand trends              │
+│ • Forecasts                  │
+│ • Stockout/overstock risks   │
+│ • Recommendations            │
+└──────────────┬───────────────┘
+               ▼
+┌──────────────────────────────┐
+│ 10. Deployment                │
+│ • Requirements               │
+│ • README                     │
+│ • Streamlit deployment      │
+│ • Testing                   │
+└──────────────┬───────────────┘
+               ▼
+┌──────────────────────────────┐
+│ 11. Final Documentation      │
+│ • Executive Summary          │
+│ • Methodology                │
+│ • Results                    │
+│ • Business Insights          │
+│ • Limitations                │
+│ • Future Scope               │
+└──────────────────────────────┘

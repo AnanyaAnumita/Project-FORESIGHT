@@ -1,0 +1,2 @@
+model,MAE,RMSE,MAPE_percent,data_scope
+Prophet,394.35651771469713,551.5826047460273,3.162754641126944,All stores and all SKUs aggregated daily

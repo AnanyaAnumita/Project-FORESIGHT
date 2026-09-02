@@ -1,0 +1,9 @@
+check,result
+Rows processed,8528538
+Date converted to datetime,datetime64[us]
+Time features created,"year, month, day, day_of_week, is_weekend"
+Negative demand,0
+Zero demand,0
+Negative unit price,0
+Negative cost price,0
+Missing values after transformation,0

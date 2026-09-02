@@ -1,0 +1,2 @@
+model,MAE,RMSE,MAPE_percent,data_scope
+ARIMA,1876.7864713617332,2516.0369866364586,13.955140721541978,All stores and all SKUs aggregated daily

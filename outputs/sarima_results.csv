@@ -1,0 +1,2 @@
+model,MAE,RMSE,MAPE_percent,data_scope
+SARIMA,1046.1418224164922,1574.1180657731097,7.625278496275214,All stores and all SKUs aggregated daily
