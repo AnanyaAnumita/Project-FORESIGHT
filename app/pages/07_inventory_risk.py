@@ -91,7 +91,15 @@ if not risk_df.empty:
         high_risk_df = df[df["risk_level"].isin(["Critical", "High"])]
         display_cols = [c for c in ["sku_id", "sku_name", "category", "risk_level", "risk_score"] if c in high_risk_df.columns]
         if not high_risk_df.empty:
-            st.dataframe(high_risk_df[display_cols].sort_values("risk_score", ascending=False), use_container_width=True)
+            table_df = high_risk_df[display_cols].sort_values("risk_score", ascending=False)
+            csv = table_df.to_csv(index=False).encode('utf-8')
+            st.download_button(
+                label="📥 Download CSV",
+                data=csv,
+                file_name="high_risk_inventory.csv",
+                mime="text/csv",
+            )
+            st.dataframe(table_df, use_container_width=True)
         else:
             st.success("No critical or high risk items found.")
     else:

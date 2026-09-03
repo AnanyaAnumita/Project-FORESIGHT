@@ -7,6 +7,12 @@ from utils import (
     format_number, format_currency, apply_chart_theme, COLORS, RISK_COLORS
 )
 
+import os
+
+logo_path = "src/logo2.png"
+if os.path.exists(logo_path):
+    st.image(logo_path, width=200)
+
 st.title("Executive Overview")
 st.markdown("High-level summary of demand and inventory health across the retail network.")
 

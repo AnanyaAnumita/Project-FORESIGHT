@@ -24,6 +24,14 @@ if not store.empty:
         df = store.copy()
         df["stock_on_hand"] = 0
 
+    # ── Filters ──
+    if "store_id" in df.columns:
+        search_query = st.text_input("Search Store ID", placeholder="e.g. STR_001")
+        if search_query:
+            df = df[df["store_id"].astype(str).str.contains(search_query, case=False, na=False)]
+
+    st.markdown("---")
+
     # ── KPIs ──
     num_stores = len(df)
     total_demand = df["demand"].sum()
@@ -66,6 +74,16 @@ if not store.empty:
     # ── Store Table ──
     st.subheader("Store Data")
     display_cols = [c for c in ["store_id", "demand", "stock_on_hand"] if c in df.columns]
-    st.dataframe(df[display_cols].sort_values("demand", ascending=False).head(30), use_container_width=True)
+    table_df = df[display_cols].sort_values("demand", ascending=False).head(30)
+    
+    csv = table_df.to_csv(index=False).encode('utf-8')
+    st.download_button(
+        label="📥 Download CSV",
+        data=csv,
+        file_name="store_performance.csv",
+        mime="text/csv",
+    )
+    
+    st.dataframe(table_df, use_container_width=True)
 else:
     st.info("Store data is not available.")

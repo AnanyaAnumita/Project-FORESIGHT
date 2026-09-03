@@ -19,15 +19,24 @@ if not sku_demand.empty and not sku_master.empty:
     else:
         df["revenue"] = 0
     # ── Filters ──
-    if "category" in df.columns:
-        all_categories = sorted(df["category"].dropna().unique())
-        selected_categories = st.multiselect(
-            "Filter by Category (Leave empty to view all)",
-            options=all_categories,
-            default=[]
-        )
-        if selected_categories:
-            df = df[df["category"].isin(selected_categories)]
+    # ── Filters ──
+    f_col1, f_col2 = st.columns(2)
+    with f_col1:
+        if "category" in df.columns:
+            all_categories = sorted(df["category"].dropna().unique())
+            selected_categories = st.multiselect(
+                "Filter by Category (Leave empty to view all)",
+                options=all_categories,
+                default=[]
+            )
+            if selected_categories:
+                df = df[df["category"].isin(selected_categories)]
+    
+    with f_col2:
+        if "sku_name" in df.columns:
+            search_query = st.text_input("Search Product Name", placeholder="e.g. Wireless Mouse")
+            if search_query:
+                df = df[df["sku_name"].str.contains(search_query, case=False, na=False)]
 
     st.markdown("---")
     # ── KPIs ──
@@ -93,6 +102,16 @@ if not sku_demand.empty and not sku_master.empty:
     # ── Product Table ──
     st.subheader("Product Catalog")
     display_cols = [c for c in ["sku_id", "sku_name", "category", "demand", "revenue", "unit_price"] if c in df.columns]
-    st.dataframe(df[display_cols].sort_values("demand", ascending=False).head(50), use_container_width=True)
+    table_df = df[display_cols].sort_values("demand", ascending=False).head(50)
+    
+    csv = table_df.to_csv(index=False).encode('utf-8')
+    st.download_button(
+        label="📥 Download CSV",
+        data=csv,
+        file_name="product_performance.csv",
+        mime="text/csv",
+    )
+    
+    st.dataframe(table_df, use_container_width=True)
 else:
     st.info("Product data is not available.")

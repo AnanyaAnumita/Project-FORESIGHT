@@ -11,6 +11,24 @@ st.markdown("Analyze demand patterns across time periods to optimize operations 
 
 daily, store, sku, monthly, category, weekday = load_dashboard_summaries()
 
+# ── Filters ──
+if not daily.empty and "date" in daily.columns:
+    daily["date"] = pd.to_datetime(daily["date"])
+    min_date = daily["date"].min().date()
+    max_date = daily["date"].max().date()
+    
+    selected_dates = st.date_input(
+        "Select Date Range",
+        value=[min_date, max_date],
+        min_value=min_date,
+        max_value=max_date
+    )
+    
+    if len(selected_dates) == 2:
+        start_date, end_date = selected_dates
+        daily = daily[(daily["date"].dt.date >= start_date) & (daily["date"].dt.date <= end_date)]
+
+st.markdown("---")
 # ── KPIs ──
 total_demand = daily["demand"].sum() if not daily.empty else 0
 avg_monthly = monthly["demand"].mean() if not monthly.empty else 0

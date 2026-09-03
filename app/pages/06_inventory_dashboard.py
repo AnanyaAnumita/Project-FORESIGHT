@@ -78,6 +78,16 @@ if not inv_df.empty:
     # ── Table ──
     st.subheader("Inventory Snapshot")
     display_cols = [c for c in ["sku_id", "sku_name", "category", "store_id", "stock_on_hand", "reorder_point", "safety_stock"] if c in df.columns]
-    st.dataframe(df[display_cols].head(50), use_container_width=True)
+    table_df = df[display_cols].head(50)
+    
+    csv = table_df.to_csv(index=False).encode('utf-8')
+    st.download_button(
+        label="📥 Download CSV",
+        data=csv,
+        file_name="inventory_snapshot.csv",
+        mime="text/csv",
+    )
+    
+    st.dataframe(table_df, use_container_width=True)
 else:
     st.info("Inventory snapshot data is not available.")
