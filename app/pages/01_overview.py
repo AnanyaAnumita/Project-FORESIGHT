@@ -18,7 +18,7 @@ if os.path.exists(logo_path):
     html = f"""
     <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 10px;">
         <img src="data:image/png;base64,{img_b64}" width="80" style="mix-blend-mode: screen; border-radius: 8px;">
-        <h1 style="margin: 0; padding: 0; font-size: 2.8rem; font-weight: 800; color: #F8FAFC; letter-spacing: 2px;">PROJECT FORESIGHT</h1>
+        <h1 style="margin: 0; padding: 0; font-size: 2.8rem; font-weight: 800; color: #F8FAFC; letter-spacing: 2px;">Project Foresight</h1>
     </div>
     """
     st.markdown(html, unsafe_allow_html=True)
