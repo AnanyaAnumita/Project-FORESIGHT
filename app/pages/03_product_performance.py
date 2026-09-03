@@ -18,7 +18,18 @@ if not sku_demand.empty and not sku_master.empty:
         df["revenue"] = df["demand"] * df["unit_price"]
     else:
         df["revenue"] = 0
+    # ── Filters ──
+    if "category" in df.columns:
+        all_categories = sorted(df["category"].dropna().unique())
+        selected_categories = st.multiselect(
+            "Filter by Category (Leave empty to view all)",
+            options=all_categories,
+            default=[]
+        )
+        if selected_categories:
+            df = df[df["category"].isin(selected_categories)]
 
+    st.markdown("---")
     # ── KPIs ──
     total_products = len(df)
     total_revenue = df["revenue"].sum()
