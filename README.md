@@ -1,272 +1,104 @@
-# FORESIGHT — Sales Forecasting & Inventory Risk Dashboard
+# FORESIGHT
 
-## 📌 Project Overview
+**Sales Forecasting & Inventory Risk Intelligence Platform**
 
-**FORESIGHT** is an interactive data analytics and forecasting application designed to help businesses understand sales performance, forecast future demand, monitor inventory, and identify potential inventory risks.
-
-The project combines historical sales data, product information, calendar data, and inventory snapshots to provide actionable insights through an interactive **Streamlit dashboard**.
+> An end-to-end analytics system that transforms raw retail data into actionable demand forecasts, inventory health metrics, and risk intelligence — powered by Prophet ML and delivered through an interactive Streamlit dashboard.
 
 ---
 
-## 🎯 Objectives
+## At a Glance
 
-The main objectives of this project are to:
-
-* Analyze historical sales trends and patterns
-* Forecast future product demand
-* Evaluate forecasting model performance
-* Monitor inventory levels
-* Identify potential stockout and overstock risks
-* Provide product-level insights
-* Present business insights through an interactive dashboard
-* Support data-driven inventory and sales decisions
+| | |
+|---|---|
+| **Category** | Sales Forecasting · Inventory Analytics · Business Intelligence |
+| **Stack** | Python · Pandas · Plotly · Streamlit · Prophet · Scikit-learn |
+| **Forecast Model** | Prophet (MAPE: 3.16% · RMSE: 551.58 · MAE: 394.36) |
+| **Dashboard** | 8 interactive pages with KPIs, charts, and data tables |
 
 ---
 
-## 🚀 Key Features
+## What It Does
 
-### 📊 Sales Analytics
-
-* Historical sales analysis
-* Daily and product-level sales trends
-* Sales performance visualization
-* Interactive filtering and exploration
-
-### 🔮 Demand Forecasting
-
-* Future sales/demand prediction
-* Forecast visualization
-* Historical vs predicted demand comparison
-* Forecast evaluation using standard metrics
-
-### 📦 Inventory Dashboard
-
-* Inventory level monitoring
-* Product inventory insights
-* Stock availability analysis
-* Identification of potential inventory issues
-
-### ⚠️ Risk Dashboard
-
-* Stockout risk identification
-* Overstock risk identification
-* Risk-level analysis
-* Prioritization of products requiring attention
-
-### 🔎 Product Details
-
-* Product-level sales information
-* Forecast information
-* Inventory information
-* Product-specific insights
-
-### 📈 Executive Summary
-
-* High-level business KPIs
-* Sales performance overview
-* Forecasting insights
-* Inventory and risk summary
-
----
-
-## 🤖 Forecasting Model
-
-The project evaluates forecasting performance using a chronological train/test approach.
-
-The dataset is divided into:
-
-* **80% training data**
-* **20% testing data**
-
-The forecasting model selected for the final implementation was **Prophet**, based on its evaluation performance.
-
-### Model Evaluation
-
-| Metric | Result |
-| ------ | -----: |
-| MAE    | 394.36 |
-| RMSE   | 551.58 |
-| MAPE   |  3.16% |
-
-Lower values indicate better forecasting performance.
-
----
-
-## 🛠️ Technologies Used
-
-* **Python**
-* **Pandas** — Data manipulation and analysis
-* **NumPy** — Numerical operations
-* **Plotly** — Interactive visualizations
-* **Streamlit** — Interactive web dashboard
-* **Prophet** — Time-series forecasting
-* **Scikit-learn** — Model evaluation and data science utilities
-
----
-
-## 📁 Project Structure
-
-```text
-Zidio_Project/
-│
-├── app/
-│   └── Streamlit dashboard application files
-│
-├── data/
-│   └── Processed and prepared datasets
-│
-├── data raw/
-│   └── Raw source datasets
-│
-├── outputs/
-│   └── Model outputs, forecasts and generated results
-│
-├── src/
-│   └── Data processing, feature engineering and forecasting code
-│
-├── README.md
-│   └── Project documentation
-│
-├── requirements.txt
-│   └── Python dependencies
-│
-└── .gitignore
-    └── Files and folders excluded from Git
+```
+Raw Data → Cleaning → Feature Engineering → EDA → ML Forecasting → Risk Scoring → Dashboard
 ```
 
-> The `venv` folder is intentionally excluded from the repository. Each user should create their own virtual environment locally.
+- **Demand Forecasting** — Predicts future product demand using Prophet with confidence intervals
+- **Sales Intelligence** — Tracks daily, monthly, and category-level demand patterns
+- **Inventory Monitoring** — Surfaces stock levels, reorder alerts, and days-of-supply metrics
+- **Risk Scoring** — Flags Critical/High/Medium/Low stockout and overstock risks
+- **Executive Reporting** — Auto-generates data-driven insights and recommendations
 
 ---
 
-## ⚙️ Installation & Setup
+## Dashboard Pages
 
-### 1. Clone the repository
+| Page | What You'll See |
+|---|---|
+| Executive Overview | 6 KPIs · demand trends · category breakdown · top stores |
+| Sales Analytics | Monthly/weekday trends · cumulative demand · category share |
+| Product Performance | Top products by volume & revenue · demand vs price scatter |
+| Store Performance | Store rankings · demand distribution · demand vs inventory |
+| Demand Forecast | Prophet forecast with confidence bands · model accuracy |
+| Inventory Dashboard | Stock levels · reorder alerts · stock vs reorder comparison |
+| Inventory Risk | Risk distribution · top risk items · category risk breakdown |
+| Executive Summary | Auto-generated insights · actionable recommendations |
+
+---
+
+## Quick Start
 
 ```bash
-git clone <YOUR_GITHUB_REPOSITORY_URL>
-```
+# Clone
+git clone https://github.com/ssuptina/Foresight.git
+cd Foresight
 
-### 2. Open the project directory
-
-```bash
-cd Zidio_Project
-```
-
-### 3. Create a virtual environment
-
-Windows:
-
-```bash
+# Setup
 python -m venv venv
-```
+.\venv\Scripts\activate      # Windows PowerShell
 
-### 4. Activate the virtual environment
-
-Windows PowerShell:
-
-```powershell
-.\venv\Scripts\activate
-```
-
-### 5. Install dependencies
-
-```bash
+# Install & Run
 pip install -r requirements.txt
-```
-
-### 6. Run the Streamlit application
-
-Depending on the dashboard entry-point file, run:
-
-```bash
-streamlit run app/<APP_FILE>.py
-```
-
-Replace `<APP_FILE>.py` with the actual Streamlit application filename in the `app` folder.
-
----
-
-## 📊 Data Sources
-
-The project uses sales, product, calendar, and inventory-related datasets for analysis and forecasting.
-
-The main data components include:
-
-* `sales_daily`
-* `sku_master`
-* `calendar`
-* `inventory_snapshots`
-
-Raw data is maintained separately from processed data to keep the data pipeline organized.
-
----
-
-## 🔄 Project Workflow
-
-```text
-Raw Data
-   ↓
-Data Cleaning
-   ↓
-Data Preprocessing
-   ↓
-Feature Engineering
-   ↓
-Exploratory Data Analysis
-   ↓
-Forecast Model Development
-   ↓
-Model Evaluation
-   ↓
-Demand Forecasting
-   ↓
-Inventory Risk Analysis
-   ↓
-Streamlit Dashboard
+streamlit run app/dashboard.py
 ```
 
 ---
 
-## 📌 Business Value
+## Project Structure
 
-FORESIGHT can help businesses:
-
-* Understand sales behavior
-* Anticipate future demand
-* Reduce stockout risk
-* Identify excess inventory
-* Prioritize products requiring attention
-* Improve inventory planning
-* Make data-driven operational decisions
-
----
-
-## 👥 Project
-
-**Project:** Zidio Development — Employee Project
-**Project Name:** FORESIGHT
-**Category:** Sales Forecasting, Inventory Analytics & Business Intelligence
+```
+Foresight/
+├── app/
+│   ├── dashboard.py              # Main entry point
+│   ├── utils.py                  # Shared utilities, theming, data loaders
+│   └── pages/                    # Dashboard pages (01–09)
+├── data/                         # Processed datasets & dashboard summaries
+├── data raw/                     # Original source datasets
+├── outputs/                      # Forecasts, model results, risk scores
+├── src/                          # Processing, modeling & analysis scripts
+├── requirements.txt
+└── README.md
+```
 
 ---
 
-## 📄 Notes
+## Data Sources
 
-* The `venv` directory is not included in version control.
-* Dependencies are maintained in `requirements.txt`.
-* Raw and processed data are organized into separate directories.
-* Forecasting results are based on the available historical dataset and should be interpreted as analytical estimates rather than guaranteed future sales.
+| Dataset | Purpose |
+|---|---|
+| `sales_daily` | Historical daily sales transactions |
+| `sku_master` | Product catalog (names, categories, prices) |
+| `calendar` | Date features for seasonality modeling |
+| `inventory_snapshots` | Point-in-time stock levels and reorder points |
 
 ---
 
-## ⭐ Future Enhancements
+## Notes
 
-Potential future improvements include:
+- Virtual environment (`venv/`) is excluded from version control
+- Forecasts are analytical estimates based on historical patterns
+- Raw and processed data are kept in separate directories
 
-* Automated data ingestion
-* Real-time inventory updates
-* Additional forecasting models
-* Automated model retraining
-* Advanced anomaly detection
-* Email or notification-based risk alerts
-* Cloud deployment
-* Role-based dashboard access
+---
+
+*Built by [ssuptina](https://github.com/ssuptina)*
