@@ -23,10 +23,13 @@ active_skus = len(sku) if not sku.empty else 0
 num_stores = len(store) if not store.empty else 0
 avg_daily = daily["demand"].mean() if not daily.empty else 0
 
-c1, c2, c3, c4, c5, c6 = st.columns(6)
+c1, c2, c3 = st.columns(3)
 c1.metric("Total Sales Volume", format_number(total_demand))
 c2.metric("Avg Daily Demand", format_number(avg_daily))
 c3.metric("Total Inventory", format_number(total_stock))
+
+st.write("") # small spacer
+c4, c5, c6 = st.columns(3)
 c4.metric("Critical Risk SKUs", format_number(critical_risk))
 c5.metric("Active Products", format_number(active_skus))
 c6.metric("Active Stores", format_number(num_stores))
@@ -41,7 +44,7 @@ with col_left:
     if not models_df.empty:
         best = models_df.iloc[0]
         m1, m2, m3 = st.columns(3)
-        m1.metric("Best Model", best.get("Model", "—"))
+        m1.metric("Best Model", best.get("model", "—"))
         m2.metric("MAPE", f"{best.get('MAPE_percent', 0):.1f}%")
         m3.metric("RMSE", format_number(best.get("RMSE", 0)))
     else:
@@ -52,10 +55,15 @@ with col_right:
     if not risk_df.empty and "risk_level" in risk_df.columns:
         risk_counts = risk_df["risk_level"].value_counts().reset_index()
         risk_counts.columns = ["risk_level", "count"]
-        r_cols = st.columns(len(risk_counts))
+        # Max 2 metrics per row inside this half-column to prevent cramping
+        r_cols1 = st.columns(2)
+        r_cols2 = st.columns(2)
+        
         for i, row in risk_counts.iterrows():
-            if i < len(r_cols):
-                r_cols[i].metric(f"{row['risk_level']} Risk", format_number(row["count"]))
+            if i < 2:
+                r_cols1[i].metric(f"{row['risk_level']} Risk", format_number(row["count"]))
+            elif i < 4:
+                r_cols2[i - 2].metric(f"{row['risk_level']} Risk", format_number(row["count"]))
     else:
         st.info("Risk data not available.")
 

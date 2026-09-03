@@ -26,13 +26,16 @@ high_risk = len(risk_df[risk_df["risk_level"] == "High"]) if not risk_df.empty a
 num_products = len(sku_demand) if not sku_demand.empty else 0
 num_stores = len(store) if not store.empty else 0
 
-c1, c2, c3, c4, c5, c6 = st.columns(6)
+c1, c2, c3 = st.columns(3)
 c1.metric("Total Demand", format_number(total_demand))
 c2.metric("Total Inventory", format_number(total_stock))
-c3.metric("Products", format_number(num_products))
-c4.metric("Stores", format_number(num_stores))
-c5.metric("Critical Risk", format_number(critical_risk))
-c6.metric("High Risk", format_number(high_risk))
+c3.metric("Total Products", format_number(num_products))
+
+st.write("")
+c4, c5, c6 = st.columns(3)
+c4.metric("Total Stores", format_number(num_stores))
+c5.metric("Critical Risk Items", format_number(critical_risk))
+c6.metric("High Risk Items", format_number(high_risk))
 
 st.markdown("---")
 
@@ -91,7 +94,7 @@ fc_insights = []
 
 if not models_df.empty:
     best = models_df.iloc[0]
-    fc_insights.append(f"- **Best model**: {best.get('Model', '—')}")
+    fc_insights.append(f"- **Best model**: {best.get('model', '—')}")
     fc_insights.append(f"- **MAPE**: {best.get('MAPE_percent', 0):.1f}% | **RMSE**: {format_number(best.get('RMSE', 0))} | **MAE**: {format_number(best.get('MAE', 0))}")
 
 if not forecast_df.empty:

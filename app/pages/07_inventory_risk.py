@@ -23,13 +23,16 @@ if not risk_df.empty:
     low = len(df[df["risk_level"] == "Low"]) if "risk_level" in df.columns else 0
     avg_score = df["risk_score"].mean() if "risk_score" in df.columns else 0
 
-    c1, c2, c3, c4, c5, c6 = st.columns(6)
+    c1, c2, c3 = st.columns(3)
     c1.metric("Total Assessed", format_number(total_items))
     c2.metric("Avg Risk Score", f"{avg_score:.1f}")
-    c3.metric("🔴 Critical", format_number(critical))
-    c4.metric("🟠 High", format_number(high))
-    c5.metric("🟡 Medium", format_number(medium))
-    c6.metric("🟢 Low", format_number(low))
+    c3.metric("🔴 Critical Risk", format_number(critical))
+
+    st.write("") # small spacer
+    c4, c5, c6 = st.columns(3)
+    c4.metric("🟠 High Risk", format_number(high))
+    c5.metric("🟡 Medium Risk", format_number(medium))
+    c6.metric("🟢 Low Risk", format_number(low))
 
     st.markdown("---")
 

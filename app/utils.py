@@ -31,15 +31,15 @@ def inject_custom_css():
         """
         <style>
         .stApp { background: #0B1220; color: #E5E7EB; }
-        .main .block-container { padding-top: 1.5rem; padding-bottom: 3rem; }
+        .main .block-container { padding-top: 0rem; padding-bottom: 3rem; margin-top: -1rem; }
         section[data-testid="stSidebar"] { background: #111827; border-right: 1px solid #263244; }
         section[data-testid="stSidebar"] * { color: #E5E7EB; }
         h1, h2, h3, h4 { color: #F8FAFC !important; }
         p, label, span { color: #CBD5E1; }
         hr { border-color: #263244 !important; }
         div[data-testid="stMetric"] { background: #151F2E; border: 1px solid #263244; border-radius: 14px; padding: 16px; box-shadow: 0 4px 18px rgba(0,0,0,0.18); }
-        div[data-testid="stMetric"] label { color: #94A3B8 !important; }
-        div[data-testid="stMetric"] [data-testid="stMetricValue"] { color: #F8FAFC !important; }
+        div[data-testid="stMetric"] label { color: #94A3B8 !important; white-space: normal !important; overflow: visible !important; text-overflow: clip !important; word-break: break-word !important; font-size: 0.9rem !important; }
+        div[data-testid="stMetric"] [data-testid="stMetricValue"] { color: #F8FAFC !important; white-space: normal !important; overflow: visible !important; text-overflow: clip !important; word-break: break-word !important; font-size: 1.8rem !important; }
         div[data-testid="stMetric"] [data-testid="stMetricDelta"] { color: #94A3B8 !important; }
         div[data-baseweb="select"] > div { background: #151F2E; border-color: #334155; color: #E5E7EB; }
         div[data-baseweb="input"] { background: #151F2E; }
@@ -50,7 +50,7 @@ def inject_custom_css():
         div[data-testid="stAlert"] { border-radius: 12px; }
         div[role="radiogroup"] label { color: #CBD5E1 !important; }
         section[data-testid="stSidebar"] h1 { color: #F8FAFC !important; }
-        header[data-testid="stHeader"] { background: #0B1220 !important; }
+        header[data-testid="stHeader"] { background: transparent !important; }
         </style>
         """,
         unsafe_allow_html=True,
